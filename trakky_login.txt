@@ -12,7 +12,7 @@ const SigninForms = ({fun}) => {
   const [otp2,setotp2]=React.useState(false);
   React.useEffect(()=>{
     if (otpstage===true){
-      setotp2(true)
+      setotp2(true)fghfngfsf
     }
     else{
       setotp2(false)
