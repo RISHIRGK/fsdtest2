@@ -1,0 +1,420 @@
+import Box from "@mui/material/Box";
+
+import Modal from "@mui/material/Modal";
+
+import React, { useState, useEffect, useRef } from "react";
+import "./Header.css";
+import axios from "axios";
+
+import authcontext from "../../../context/Auth";
+
+import trakkyWhite from "../../../Assets/images/logos/Trakky logo white.png";
+import trakkyPurple from "../../../Assets/images/logos/Trakky logo purple.png";
+import userlogowhite from "../../../Assets/logos/user.svg";
+import userlogoblack from "../../../Assets/logos/user_black.svg";
+import Search from "../../../Assets/images/icons/search.svg";
+import SigninForms from "./signupsigninforms/SigninForms";
+import Filters from "../../../Assets/images/icons/filters.svg";
+import { Link } from "react-router-dom";
+const style = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+};
+// window dimensions
+function getWindowDimensions() {
+  const width = window.innerWidth,
+    height = window.innerHeight;
+  return { width, height };
+}
+// default prop of page = "other": which represents navbar of all other pages except home page.
+
+// Rendering Home page Navbar prop of page = "some random text" needs to be passed.
+
+const Header = ({ page = "other" }) => {
+  const { user, authTokens, logoutUser } = React.useContext(authcontext);
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  const [windowDimensions, setWindowDimensions] = useState(
+    getWindowDimensions()
+  );
+  useEffect(() => {
+    function handleResize() {
+      setWindowDimensions(getWindowDimensions());
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // show determines whether navbar on scroll is visible or not.
+  const [show, setShow] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== "undefined") {
+        if (window.scrollY < lastScrollY && lastScrollY >= 330) {
+          setShow(true);
+        } else {
+          setShow(false);
+        }
+
+        setLastScrollY(window.scrollY);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", controlNavbar);
+      return () => {
+        window.removeEventListener("scroll", controlNavbar);
+      };
+    }
+  }, [lastScrollY]);
+
+  // navState determines whether it is navbar of home page or of other pages
+  // If navState is true => navbar of home page is rendered.
+  const navState = page !== "other";
+
+  const [isFocused, setIsFocused] = useState(false);
+  const ref = useRef(null);
+
+  const [username, setUsername] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [searchResultList, setSearchResultList] = useState([{}]);
+  const [showdropdown, setshowdropdown] = useState(false);
+
+  // getting search result
+  const getSearchResult = (text) => {
+    axios
+      .get(`http://3.109.62.127:8000/salons/search/?query=${text}`)
+      .then((res) => setSearchResultList(res.data.data))
+      .catch((err) => console.log(err));
+  };
+  const get_user_data = async () => {
+    if (user) {
+      const response = await fetch(
+        `http://3.109.62.127:8000/salons/salonuser/${user.user_id}/`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authTokens?.access_token}`,
+          },
+        }
+      );
+      const data = await response.json();
+      console.log(data);
+      setUsername(data.username);
+    }
+  };
+  React.useEffect(() => {
+    get_user_data();
+  }, [user, authTokens]);
+
+  return (
+    <div>
+      <div
+        className={`navbar__container ${show && "hidden"}`}
+        style={{
+          background: !navState && show ? "#FFF" : "",
+          position: show ? "fixed" : !navState ? "relative" : "absolute",
+        }}
+      >
+        <div className="logo__container">
+          {
+            <Link to="/">
+              {(show && { windowDimensions }.windowDimensions.width >= 631) ||
+              ((show || navState) &&
+                { windowDimensions }.windowDimensions.width < 631) ? (
+                <img src={trakkyPurple} draggable="false" alt="" />
+              ) : (
+                <img
+                  src={navState ? trakkyWhite : trakkyPurple}
+                  draggable="false"
+                  alt=""
+                />
+              )}
+            </Link>
+          }
+        </div>
+        {/* <div
+        className="nav-links__container"
+        style={{ display: navState ? "" : "none" }}
+      >
+        <li>Trakky Sentence</li>
+        <li>Experiences</li>
+        <li>Online Experiences</li>
+      </div> */}
+
+        <div
+          className={`search__container navbar_search-top ${
+            navState ? "" : "none-other"
+          }`}
+          style={{
+            position: "relative",
+          }}
+          tabIndex={0}
+          onFocus={() => {
+            setIsFocused(true);
+            ref.current.focus();
+          }}
+          onBlur={() => setIsFocused(false)}
+        >
+          <img draggable="false" src={Search} alt="" />
+          <form className="search-bar">
+            <label
+              htmlFor="search"
+              id="searchLabel"
+              style={{
+                fontWeight: "bold",
+                display:
+                  isFocused || searchText.length !== 0 ? "none" : "block",
+              }}
+            >
+              What to?
+            </label>
+            <input
+              ref={ref}
+              type="text"
+              placeholder="Salon name • Area • City • Category"
+              name="search"
+              autoComplete="off"
+              id="search"
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                getSearchResult(e.target.value);
+              }}
+              style={{
+                fontSize: isFocused || searchText.length !== 0 ? "larger" : "",
+              }}
+            />
+          </form>
+          <img
+            draggable="false"
+            src={Filters}
+            alt=""
+            style={{ height: "2.5rem" }}
+          />
+          <div
+            className="search_result__container"
+            style={{
+              position: "absolute",
+              display: searchText === "" ? "none" : "block",
+              top: "100%",
+              width: "90%",
+              left: "5%",
+            }}
+          >
+            <ul>
+              {searchResultList.map((salon, index) => {
+                return (
+                  <>
+                    <li key={index}>
+                      <Link
+                        to={`/salons${salon.slug}`}
+                        onClick={() => window.location.href.reload()}
+                      >
+                        {salon.name}
+                      </Link>
+                    </li>
+                    {/* <li key={index}>
+                  <Link to={`city/${salon.City}`}>{salon.City}</Link>
+                </li>
+                <li key={index}>
+                  <Link to={`area/${salon.Area}`}>{salon.Area}</Link>
+                </li> */}
+                  </>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+<<<<<<< HEAD
+        
+<div className="  register-div  ">
+{/* {console.log(user)} */}
+{user? <div className=' flex justify-center items-center gap-3  relative  min-w-[6rem] '    ><p  className={`ring-1 text-sm ${(!show &&navState && windowDimensions.width>=631)?"ring-white text-white  ":"ring-black text-black " } rounded-3xl px-3 py-2  md:px-6 md:py-3  `}   onClick={()=>{setshowdropdown(!showdropdown)}}   >Welcome, {username}</p> 
+  {/* <img src={userlogoblack  } alt="logo"      className='w-[.9rem] md:w-[2rem] h-[.9rem] md:h-[2rem] ' /> */}
+
+
+  <div
+              className={` absolute top-[110%] md:top-[120%]  w-[10rem]  transition-opacity ease-in-out    duration-700  ${
+                showdropdown ? " opacity-100  z-50  " : " opacity-0 -z-10 "
+              } w-[100%] flex flex-col justify-center items-start bg-white  rounded-xl shadow-3xl 
+=======
+
+        <div className="  register-div  ">
+          {/* {console.log(user)} */}
+          {user ? (
+            <div className=" flex justify-center items-center gap-3  relative  min-w-[6rem] ">
+              <p
+                style={{
+                  borderColor:
+                    !show &&
+                    navState &&
+                    { windowDimensions }.windowDimensions.width >= 631
+                      ? "white"
+                      : "black",
+                  color:
+                    !show &&
+                    navState &&
+                    { windowDimensions }.windowDimensions.width >= 631
+                      ? "white"
+                      : "black",
+                  borderRadius: "1.5rem",
+                  paddingLeft: "1rem",
+                  paddingRight: "1rem",
+                  paddingTop: ".5rem",
+                  paddingBottom: ".5rem",
+                }}
+                onClick={() => {
+                  setshowdropdown(!showdropdown);
+                }}
+              >
+                Welcome, {username}
+              </p>
+              {/* <img src={userlogoblack  } alt="logo"      className='w-[.9rem] md:w-[2rem] h-[.9rem] md:h-[2rem] ' /> */}
+
+              <div
+                className={` absolute top-[110%] md:top-[120%]  w-[10rem]  transition-opacity ease-in-out    duration-700  ${
+                  showdropdown ? " opacity-100  z-50  " : " opacity-0 -z-10 "
+                } w-[100%] flex flex-col justify-center items-start bg-white  rounded-xl shadow-3xl 
+>>>>>>> 97c37935be92746da5c1e890ec2bce8b42a1e4fd
+            text-black ring-1 ring-black ring-opacity-50    `}
+              >
+                {/* <button
+                className=" text-[.8rem]  font-bold  px-4 py-2  "
+                onClick={() => {
+                  console.log("c1");
+                }}
+              >
+                Profile
+              </button> */}
+                <div>
+                  <button
+                    className=" text-[.8rem]  font-bold  px-4 py-2"
+                    onClick={logoutUser}
+                  >
+                    Logout
+                  </button>
+                </div>
+
+                <button
+                  className=" text-[.8rem]  font-bold  px-4 py-2"
+                  style={{
+                    // Text align to the left
+                    textAlign: "left",
+                  }}
+                >
+                  Help: 093283 82710
+                </button>
+              </div>
+            </div>
+<<<<<<< HEAD
+  </div>: 
+  
+<div className="">
+          <button onClick={()=>{handleOpen()}}
+          
+          >
+           
+              <div
+               className={`ring-1 text-sm ${(!show &&navState && windowDimensions.width>=631)?"ring-white text-white  ":"ring-black text-black " } rounded-3xl px-3 py-2  md:px-6 md:py-3  `} 
+=======
+          ) : (
+            <div className="register-salon">
+              <button
+                onClick={() => {
+                  handleOpen();
+                }}
+                style={{
+                  borderColor:
+                    !show &&
+                    navState &&
+                    { windowDimensions }.windowDimensions.width >= 631
+                      ? "white"
+                      : "black",
+                }}
+>>>>>>> 97c37935be92746da5c1e890ec2bce8b42a1e4fd
+              >
+                <div
+                  style={{
+                    color:
+                      !show &&
+                      navState &&
+                      { windowDimensions }.windowDimensions.width >= 631
+                        ? "white"
+                        : "black",
+                  }}
+                >
+                  Login / Signup
+                </div>
+              </button>
+              <div className=" ">
+                <Modal
+                  open={open}
+                  onClose={handleClose}
+                  aria-labelledby="modal-modal-title"
+                  aria-describedby="modal-modal-description"
+                >
+                  <Box sx={style}>
+                    <SigninForms fun={handleClose} />
+                  </Box>
+                </Modal>
+              </div>
+            </div>
+          )}
+          <div className="register-salon">
+            <button
+              style={{
+                borderColor:
+                  !show &&
+                  navState &&
+                  { windowDimensions }.windowDimensions.width >= 631
+                    ? "white"
+                    : "black",
+              }}
+            >
+              <Link to={"https://aboutus.trakky.in"}>
+                <div
+                  style={{
+                    color:
+                      !show &&
+                      navState &&
+                      { windowDimensions }.windowDimensions.width >= 631
+                        ? "white"
+                        : "black",
+                  }}
+                >
+                  Register Salon
+                </div>
+              </Link>
+            </button>
+          </div>
+<<<<<<< HEAD
+        </div>}
+        <div className="register-salon">
+          <button
+          
+          >
+            <Link to={"https://aboutus.trakky.in"}>
+              <div
+                className={`ring-1 text-sm ${(!show &&navState && windowDimensions.width>=631)?"ring-white text-white  ":"ring-black text-black " } rounded-3xl px-3 py-2  md:px-6 md:py-3  `} 
+              >
+                Register Salon
+              </div>
+            </Link>
+          </button>
+=======
+>>>>>>> 97c37935be92746da5c1e890ec2bce8b42a1e4fd
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Header;
+// {user["username"]?user.username:" "}

@@ -1,0 +1,183 @@
+import React from 'react'
+import trakkywhite from "../../../../Assets/images/logos/Trakky logo white.png";
+import trakkypurple from "../../../../Assets/images/logos/Trakky logo purple.png";
+import trakkyblack from "../../../../Assets/images/logos/trakky_black_logo.png";
+import close from "../../../../Assets/images/logos/close.svg";
+import  AuthContext  from "../../../../context/Auth";
+const SigninForms = ({fun}) => { 
+  let { loginUser, logoutUser,isAuthenticated ,signupUser,otpstage } = React.useContext(AuthContext);
+  const [City,setCity]=React.useState([])
+  const [signin,setsignin]=React.useState(true);
+  const [otp,setotp]=React.useState(false); 
+  const [otp2,setotp2]=React.useState(false);
+  React.useEffect(()=>{
+    if (otpstage===true){
+      setotp2(true)
+    }
+    else{
+      setotp2(false)
+    } 
+  },[otpstage])
+  React.useEffect(()=>{
+    if (isAuthenticated){
+      fun()
+    }
+    else
+    {
+      setotp(false)
+   
+    }
+  },[isAuthenticated])
+  React.useEffect(() => {
+    logoutUser();
+  }, [logoutUser]);
+  
+  const getcity=async()=>{
+    const response = await fetch("http://3.109.62.127:8000/salons/city/")
+    const data = await response.json()
+    
+    setCity(data.payload)
+
+  }
+
+  React.useEffect(()=>{
+    getcity()
+  },[])
+   
+    const otprequest=async(e)=>{
+      e.preventDefault();
+    const response = await fetch("http://3.109.62.127:8000/salons/otp/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone_number: e.target.phonenumber.value,
+       
+      }),
+    
+
+    });
+  
+    if (response.status===200){
+      setotp(true)
+      alert("OTP sent")
+    }
+    else{
+      alert("error while sending otp please try again")
+    }
+  }
+    const otprequesttwo=async(e)=>{
+      e.preventDefault();
+    const response = await fetch("http://3.109.62.127:8000/salons/otp/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone_number: e.target.phonenumber.value,
+       
+      }),
+
+    });
+
+  if (response.status===200){
+    setotp2(true)
+    alert("OTP sent")
+  }
+  else{
+    alert("error while sending otp please try again")
+  }
+  }
+
+  return (
+    <div>
+        <div class="   ">
+  <div class=" w-[19rem] h-[40rem]    md:w-[50rem] lg:h-[50rem] bg-white  rounded-lg flex flex-col relative ">
+   
+    <div class="w-[100%] min-h-[8rem] h-[10%]  flex justify-center items-center " >
+      
+      <div class="w-[30%] " > 
+    <img src={trakkyblack}  className='  w-[100%]  ' alt="logo" />
+        
+      </div>
+      <div class=" w-[30%]  text-start font-[400] ml-4 text-xl lg:text-4xl text-black " >For Salon</div>
+    </div>
+    <div class="w-[100%] h-[90%] flex justify-center items-start  " >
+      <div class=" w-[90%]  md:w-[100%]  h-[100%] flex flex-col  justify-start items-center  " >
+         
+        <div class=" w-[100%]  h-[2rem] lg:h-[4rem]   flex  justify-center items-center  " >
+          <div onClick={()=>{setsignin(true)}} className={`w-[20rem] h-[100%] flex justify-center items-center ${signin?"text-white bg-black shadow-md":"bg-white text-black  "} transition-all duration-700  md:text-xl md:font-[500] `} >Sign In</div>
+          <div onClick={()=>{setsignin(false)}} className={`w-[20rem] h-[100%] flex justify-center items-center ${signin?"text-black bg-white ":"text-white transition-all duration-700 bg-black shadow-md"}  md:text-xl md:font-[500]`} >Sign Up</div>
+        </div>
+       {signin?  <form action="" className=" w-[100%] h-[calc(100%-4rem)]  gap-1 flex flex-col justify-start items-center  " onSubmit={otp ?loginUser:otprequest}  method="post"   >
+          <div class="w-[70%] flex justify-center flex-col items-center my-8 gap-3">
+            <div class="  text-xl lg:text-3xl font-[700] text-black" > Login to account.</div>
+            <div class=" text-black  text-[.7rem] " >Witness The revolution of Grooming Industry.</div>
+            <div>
+              <button class=" bg-white  px-3 py-2  text-black hidden  ">continue with  Google </button>
+            </div>
+            <div class="text-black hidden " > ----or---- </div>
+            </div>
+           
+            <div class=" w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white "  >
+
+              <input class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black  placeholder:opacity-80 focus:outline-black " name="phonenumber"  placeholder="Enter Contact Number  " type="text"/>
+            </div>
+        
+          {otp && <div class=" w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+              <input class="w-[100%] h-[90%] border-white border-2 text-white rounded-sm bg-black  px-4  placeholder:text-white placeholder:opacity-80 focus:outline-white " name="otp" type="text"  placeholder="Enter the OTP here" />
+            </div>}
+              <div class=" w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white "  >
+              <button class="w-[100%] h-[100%] bg-black "  type="submit">{otp?"Verify OTP":"send OTP"}</button>
+            </div>
+       </form>:  <form action=""  class=" w-[100%] h-[calc(100%-4rem)]  gap-1 flex flex-col justify-start items-center  " method='post' onSubmit={otp2?loginUser:signupUser}  >  
+            <div class="w-[70%] flex justify-center flex-col items-center my-8 gap-3">
+              <div class=" text-xl lg:text-3xl font-[700] text-black" > Create a new account.</div>
+              <div class=" text-black text-[.7rem] " >Witness The revolution of Grooming Industry.</div>
+              <div>
+                <button class=" bg-black  px-3 py-2  text-white hidden  ">continue with  Google </button>
+              </div>
+              <div class="text-black hidden " > ----or---- </div>
+              </div>
+              <div class="  w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <input class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black  placeholder:opacity-80 focus:outline-black " placeholder="Username" type="text" name='username' />
+              </div>
+              <div class="  w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <input class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black placeholder:opacity-80 focus:outline-black " type="number"  placeholder="Contact Number" name='phonenumber' / >
+              </div>
+                 <div class="  w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <input class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black placeholder:opacity-80 focus:outline-black " type="email"  placeholder="Email address" name='email'  />
+              </div>
+              <div class="   w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <select class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black placeholder:opacity-80 focus:outline-black" name='city'   id="">
+                    <option  disabled hidden value="">--Select City--</option>
+                   {
+                      City?.map((item)=>{
+                        return(
+                          <option value={item.id}>{item.name}</option>
+                        )
+                      }
+                      )
+                   }
+                    
+                </select>
+               
+              </div>
+              { otp2 && <div class="  w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <input class="w-[100%] h-[90%] border-black border-2 text-black rounded-sm bg-white  px-4  placeholder:text-black placeholder:opacity-80 focus:outline-black " type="text"  placeholder="Enter the OTP here" name="otp" />
+              </div>}
+             <div class="   w-[70%]  h-[2rem] lg:w-[60%] lg:h-[2.8rem] text-white  "  >
+                <button class="w-[100%] h-[100%] bg-black "type="submit"> ADD USER</button>
+              </div>
+          </form>}
+      </div>
+    </div> 
+  </div>
+</div>
+    </div>
+  )
+}
+
+export default SigninForms
+{/* {otp2?"Verify OTP":"send OTP"} */}
